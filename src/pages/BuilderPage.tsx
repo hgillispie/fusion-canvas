@@ -17,61 +17,25 @@ builder.init('3c6461bfa5d2456eae766a5a705270df');
  */
 const BuilderPage: React.FC<{ modelName?: string }> = ({ modelName = 'page' }) => {
   const [content, setContent] = useState(null);
-  const [loading, setLoading] = useState(true);
   const isPreviewing = useIsPreviewing();
+  const path = window.location.pathname === '/' ? '/' : window.location.pathname;
 
   useEffect(() => {
-    // Get the current path without the domain and leading slash
-    const path = window.location.pathname === '/' 
-      ? '/home' // Use '/home' for the root path
-      : window.location.pathname;
-      
-    // Fetch content from Builder for the current page
-    async function fetchContent() {
-      setLoading(true);
-      const content = await builder
-        .get(modelName, {
-          url: path,
-          options: { includeRefs: true }
-        })
-        .promise();
-        
-      setContent(content);
-      setLoading(false);
-    }
+    builder
+      .get(modelName, { url: path, options: { includeRefs: true } })
+      .promise()
+      .then(setContent);
+  }, [modelName, path]);
 
-    fetchContent();
-  }, [modelName]);
-
-  // Show a loading spinner while content is being fetched
-  if (loading) {
+  if (!content && !isPreviewing) {
     return (
-      <div className="flex justify-center items-center py-20">
-        <Loader2 className="h-10 w-10 text-indigo-600 animate-spin" />
-        <span className="ml-3 text-lg text-gray-600">Loading content...</span>
-      </div>
-    );
-  }
-
-  // Show the Builder content if it exists
-  if (content) {
-    return <BuilderComponent model={modelName} content={content} />;
-  }
-
-  // Show a message if no content is found and not in preview mode
-  if (!isPreviewing) {
-    return (
-      <div className="text-center py-16 px-4">
+      <div className="text-center py-16">
         <h2 className="text-2xl font-semibold text-gray-800 mb-4">No Content Found</h2>
-        <p className="text-gray-600 max-w-lg mx-auto mb-8">
-          There is no Builder.io content published for this page yet.
-          Log in to the Builder.io dashboard to create content for this page.
-        </p>
         <a 
-          href={`https://builder.io/content/${modelName}`}
+          href={`https://builder.io/content/page`}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          className="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
         >
           Create Content in Builder.io
         </a>
@@ -79,8 +43,15 @@ const BuilderPage: React.FC<{ modelName?: string }> = ({ modelName = 'page' }) =
     );
   }
 
-  // Show nothing in preview mode if no content exists yet
-  return null;
+  if (!content) {
+    return (
+      <div className="flex justify-center items-center py-20">
+        <Loader2 className="h-10 w-10 text-indigo-600 animate-spin" />
+      </div>
+    );
+  }
+
+  return <BuilderComponent model={modelName} content={content} />;
 };
 
 export default BuilderPage;
